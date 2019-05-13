@@ -6,11 +6,10 @@ projects
 .idea/inspectionProfiles/Project_Default.xml
 .idea/runConfigurations/Run.xml
 .idea/runConfigurations/Test.xml
-do_not_commit
+db
 public/fonts/icons*
 public/fonts/brand*
 public/fonts/outline*
 botfront/cypress/videos
 botfront/cypress/screenshots
-bf_project_id.txt
 .DS_Store

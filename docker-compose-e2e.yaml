@@ -1,0 +1,42 @@
+version: "3.7"
+services:
+  cypress:
+    image: cypress/included:3.2.0
+    networks: ['botfront-network']
+    volumes:
+    - ./botfront:/e2e
+    working_dir: /e2e
+    depends_on:
+    - botfront
+    environment:
+    - CYPRESS_baseUrl=http://host.docker.internal:8888
+
+  botfront:
+    image: botfront/botfront
+    restart: always
+    networks: ['botfront-network']
+    ports:
+    - "8888:3000"
+    depends_on:
+    - mongo
+    environment:
+      - PORT=3000
+      - ROOT_URL=http://host.docker.internal:8888
+      - MONGO_URL=mongodb://host.docker.internal:27017
+      - ORCHESTRATOR=docker-compose
+
+  mongo:
+    image: mongo
+    restart: always
+    networks: ["botfront-network"]
+    volumes:
+    - ./db:/data/db
+    ports:
+    - "27017:27017"
+    environment: 
+      MONGO_INITDB_DATABASE: bf
+
+networks: 
+  botfront-network: {}
+volumes:
+  db:
