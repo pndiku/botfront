@@ -5,11 +5,14 @@ services:
     networks: ['botfront-network']
     volumes:
     - ./botfront:/e2e
+    - ./wait-for-it.sh:/e2e/wait-for-it.sh
     working_dir: /e2e
+    entrypoint: ./wait-for-it.sh
     depends_on:
     - botfront
     environment:
-    - CYPRESS_baseUrl=http://host.docker.internal:8888
+    - CYPRESS_IS_CI=true
+    - CYPRESS_baseUrl=http://botfront:3000
 
   botfront:
     image: botfront/botfront
@@ -18,21 +21,23 @@ services:
     ports:
     - "8888:3000"
     depends_on:
-    - mongo
+    - mongoimage
     environment:
       - PORT=3000
-      - ROOT_URL=http://host.docker.internal:8888
-      - MONGO_URL=mongodb://host.docker.internal:27017
+      - ROOT_URL=http://localhost:8888
+      - MONGO_URL=mongodb://mongoimage:27017/bf
+      - METEOR_PROFILE=1
+      - METEOR_LOG=debug
       - ORCHESTRATOR=docker-compose
 
-  mongo:
+  mongoimage:
     image: mongo
     restart: always
     networks: ["botfront-network"]
     volumes:
     - ./db:/data/db
-    ports:
-    - "27017:27017"
+    # ports:
+    # - "27017:27017"
     environment: 
       MONGO_INITDB_DATABASE: bf
 
