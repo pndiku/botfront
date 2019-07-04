@@ -1,7 +1,7 @@
 # Understanding intents and entities
 
 ::: tip
-Technology plays certainly a role, but the most significant performance gains are obtained by developping a good understanding of the fundamental NLU concepts. 
+Technology plays certainly a role, but the most significant performance gains are obtained by developing a good understanding of the fundamental NLU concepts. 
 :::
 
 ## Intents
