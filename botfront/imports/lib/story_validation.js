@@ -20,7 +20,7 @@ export class StoryValidator {
             intents: new Set(),
             actions: new Set(),
             forms: new Set(),
-            templates: { },
+            templates: {},
         };
         this.noTitle = false;
         this.line = 0;
@@ -35,37 +35,35 @@ export class StoryValidator {
 
     checkForInvalidChars = (str) => {
         if (str.match(/[ /]/)) this.raiseStoryException('error', 'Found invalid character');
-    }
+    };
 
     raiseStoryException = (code) => {
         if (code !== 'title' || !this.noTitle) {
             this.exceptions.push(new StoryException(...this.exceptionMessages[code], this.line + 1, code));
             if (code === 'title') this.noTitle = true;
         }
-    }
+    };
 
     validateUtter = () => {
         this.form = null;
         this.checkForInvalidChars(this.response);
         this.extracted.actions.add(this.response);
         this.extracted.templates[this.response] = '';
-    }
+    };
 
     validateAction = () => {
         this.form = null;
         this.checkForInvalidChars(this.response);
         this.extracted.actions.add(this.response);
-    }
+    };
 
     validateForm = () => {
         this.form = this.response;
         this.checkForInvalidChars(this.response);
         this.extracted.forms.add(this.response);
-    }
+    };
 
-    validateSlot = () => {
-
-    }
+    validateSlot = () => {};
 
     exceptionMessages = {
         prefix: ['error', 'Lines should start with `## `, `* ` or `- `'],
@@ -77,7 +75,7 @@ export class StoryValidator {
         empty_intent: ['warning', 'User utterance (intent) block closed without defining any bot action.'],
         action_name: ['warning', 'Actions should look like this: `- action_...`, `- utter_...`, `- slot{...}` or `- form{...}`.'],
         declare_form: ['warning', 'Form calls (`- form{"name": "MyForm"}`) should be preceded by matching `- MyForm`.'],
-    }
+    };
 
     validateIntent = () => {
         if (!this.story) this.raiseStoryException('title');
@@ -89,9 +87,7 @@ export class StoryValidator {
             try {
                 const intent = /([^{]*) *({.*}|)/.exec(disj)[1];
                 let entities = /([^{]*) *({.*}|)/.exec(disj)[2];
-                entities = entities && entities !== ''
-                    ? Object.keys(JSON.parse(entities))
-                    : [];
+                entities = entities && entities !== '' ? Object.keys(JSON.parse(entities)) : [];
                 this.checkForInvalidChars(intent);
                 this.extracted.intents.add(intent);
                 entities.forEach(entity => this.extracted.entities.add(entity));
@@ -99,7 +95,7 @@ export class StoryValidator {
                 this.raiseStoryException('intent');
             }
         });
-    }
+    };
 
     validateResponse = () => {
         if (!this.story) this.raiseStoryException('title');
@@ -130,7 +126,7 @@ export class StoryValidator {
         } else {
             this.raiseStoryException('action_name');
         }
-    }
+    };
 
     validateStories = () => {
         for (this.line; this.line < this.stories.length; this.line += 1) {
@@ -140,16 +136,19 @@ export class StoryValidator {
                     [this.prefix, this.content] = /(^ *## |^ *\* |^ *- )(.*)/.exec(line).slice(1, 3);
                     this.prefix = trimStart(this.prefix);
 
-                    if (this.prefix === '## ') { // new story
+                    if (this.prefix === '## ') {
+                        // new story
                         if (this.story && !this.intent && !this.response) this.raiseStoryException('empty_story');
                         if (this.story && this.intent && !this.response) this.raiseStoryException('empty_intent');
                         this.story = this.content;
                         this.intent = null;
                         this.response = null;
                         this.form = null;
-                    } else if (this.prefix === '* ') { // new intent
+                    } else if (this.prefix === '* ') {
+                        // new intent
                         this.validateIntent();
-                    } else if (this.prefix === '- ') { // new response
+                    } else if (this.prefix === '- ') {
+                        // new response
                         this.validateResponse();
                     }
                 } catch (e) {
@@ -157,7 +156,7 @@ export class StoryValidator {
                 }
             }
         }
-    }
+    };
 
     extractDomain = () => {
         const errors = this.exceptions.filter(exception => exception.type === 'error');
@@ -166,9 +165,46 @@ export class StoryValidator {
         }
         return {
             ...this.extracted,
-            slots: { },
+            slots: {},
         };
-    }
+    };
+
+    extractDialogAct = () => {
+        const initRegex = /^\* *(.*)/;
+        const initPayload = initRegex.exec(this.stories[0])[1];
+        this.payloads = initPayload.split(' OR ').map(disj => trimStart(disj));
+        this.response = null;
+        this.form = null;
+        const payloadRegex = /([^{]*) *({.*}|)/;
+        const output = {
+            objectPayloads: [],
+            stringPayloads: [],
+        };
+        try {
+            this.payloads.forEach((payload) => {
+                const matches = payloadRegex.exec(payload);
+                const intent = matches[1];
+                let entities = matches[2];
+                const payloadOutput = {
+                    intent,
+                    entities: [],
+                };
+                console.log(entities);
+                if (entities && entities !== '') {
+                    const parsed = JSON.parse(entities);
+                    entities = Object.keys(parsed).map(key => ({ entity: key, value: parsed[key] }));
+                } else {
+                    entities = [];
+                }
+                payloadOutput.entities = entities;
+                output.objectPayloads.push(payloadOutput);
+                output.stringPayloads.push(payload);
+            });
+        } catch (e) {
+            console.log(e);
+        }
+        return output;
+    };
 }
 
 function addSlots(slots) {
@@ -221,14 +257,17 @@ export const extractDomain = (stories, slots) => {
         val.validateStories();
         return val.extractDomain();
     });
-    domains = domains.reduce((d1, d2) => ({
-        entities: new Set([...d1.entities, ...d2.entities]),
-        intents: new Set([...d1.intents, ...d2.intents]),
-        actions: new Set([...d1.actions, ...d2.actions]),
-        forms: new Set([...d1.forms, ...d2.forms]),
-        templates: { ...d1.templates, ...d2.templates },
-        slots: { ...d1.slots, ...d2.slots },
-    }), defaultDomain);
+    domains = domains.reduce(
+        (d1, d2) => ({
+            entities: new Set([...d1.entities, ...d2.entities]),
+            intents: new Set([...d1.intents, ...d2.intents]),
+            actions: new Set([...d1.actions, ...d2.actions]),
+            forms: new Set([...d1.forms, ...d2.forms]),
+            templates: { ...d1.templates, ...d2.templates },
+            slots: { ...d1.slots, ...d2.slots },
+        }),
+        defaultDomain,
+    );
     domains = yamlDump({
         entities: Array.from(domains.entities),
         intents: Array.from(domains.intents),
