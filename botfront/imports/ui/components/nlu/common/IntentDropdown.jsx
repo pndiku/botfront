@@ -5,7 +5,7 @@ import React from 'react';
 import './IntentDropdown.less';
 
 function IntentDropdown({
-    onChange, onAddItem, options, intent, autofocus,
+    onChange, onAddItem, options, intent, autofocus, isSearchable, allowAdditions,
 }) {
     const uniqueOptions = [...new Set(options.map(option => option.value))].map(value => ({
         text: value,
@@ -23,9 +23,9 @@ function IntentDropdown({
             button
             placeholder='Select an intent'
             labeled
-            search
+            search={isSearchable}
             value={intent}
-            allowAdditions
+            allowAdditions={allowAdditions}
             selection
             additionLabel='Create intent: '
             onAddItem={onAddItem}
@@ -42,10 +42,14 @@ IntentDropdown.propTypes = {
     options: PropTypes.array.isRequired,
     intent: PropTypes.string.isRequired,
     autofocus: PropTypes.bool,
+    isSearchable: PropTypes.bool,
+    allowAdditions: PropTypes.bool,
 };
 
 IntentDropdown.defaultProps = {
     autofocus: false,
+    isSearchable: true,
+    allowAdditions: true,
 };
 
 export default IntentDropdown;
