@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     Label, Popup,
 } from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 import IntentDropdown from '../nlu/common/IntentDropdown';
+import { IntentContext } from './Context';
 
 function handleOnChange(data, changeDropDownValue, changeIntent) {
     changeDropDownValue(data.value);
@@ -13,12 +14,12 @@ function handleOnChange(data, changeDropDownValue, changeIntent) {
 function Intent({
     value,
     size,
-    options,
     allowEditing,
     allowAdditions,
     changeIntent,
 }) {
     const [dropDownValue, changeDropDownValue] = useState(value);
+    const { options } = useContext(IntentContext);
     const intents = options.map(intent => ({ key: intent, text: intent, value: intent }));
     return (
         <Popup
@@ -46,7 +47,6 @@ function Intent({
 Intent.propTypes = {
     value: PropTypes.object.isRequired,
     size: PropTypes.string,
-    options: PropTypes.array,
     allowEditing: PropTypes.bool,
     allowAdditions: PropTypes.bool,
     changeIntent: PropTypes.func,
@@ -54,7 +54,6 @@ Intent.propTypes = {
 
 Intent.defaultProps = {
     size: 'small',
-    options: [],
     allowEditing: false,
     allowAdditions: false,
     changeIntent: () => {},
